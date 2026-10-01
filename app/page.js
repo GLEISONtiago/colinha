@@ -1,0 +1,4 @@
+'use client';
+import {useState} from 'react';
+const cargos=[['DEPUTADO FEDERAL',4],['DEPUTADO ESTADUAL',5],['SENADOR — 1ª VAGA',3],['SENADOR — 2ª VAGA',3],['GOVERNADOR',2],['PRESIDENTE',2]];
+export default function Home(){const [vals,setVals]=useState({});function set(c,n,v){setVals(s=>({...s,[c]:v.replace(/\\D/g,'').slice(0,n)}))}return <main><header><div>ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você escolheu. A ferramenta não recomenda candidaturas.</p></header><section>{cargos.map(([c,n])=><div className="cargo" key={c}><label>{c}</label><input inputMode="numeric" maxLength={n} value={vals[c]||''} onChange={e=>set(c,n,e.target.value)} placeholder={'0'.repeat(n)}/></div>)}<button>GERAR MINHA COLA</button><p className="nota">Confira os números antes de votar. Este site não registra suas escolhas.</p></section></main>}
