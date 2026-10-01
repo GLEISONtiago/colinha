@@ -16,7 +16,7 @@ const baseCargos=[
 ];
 
 async function buscar(c,n){
- const q=new URLSearchParams({select:'ballot_name,party_abbreviation,candidate_number,photo_url,tse_candidate_id,source_generated_at',election_year:'eq.2026',uf:`eq.${c.uf}`,office:`eq.${c.office}`,candidate_number:`eq.${n}`});
+ const q=new URLSearchParams({select:'ballot_name,party_abbreviation,candidate_number,photo_url,tse_candidate_id,source_generated_at',election_year:'eq.2026',uf:`eq.${c.uf}`,office:`eq.${c.office}`,candidate_number:`eq.${n}`,inserted_in_urn:'eq.true',is_substituted:'eq.false'});
  const r=await fetch(`${URL}/rest/v1/candidates?${q}`,{headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});
  if(!r.ok)throw Error();
  return r.json();
