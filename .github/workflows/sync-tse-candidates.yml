@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - name: Download official TSE candidates ZIP
         run: curl --fail --location --retry 3 --output /tmp/consulta_cand_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip
       - name: Import national candidates
