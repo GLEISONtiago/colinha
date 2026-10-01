@@ -49,3 +49,5 @@
 @media(max-width:500px){.topnav{padding:10px}.topnav>b{font-size:13px}.topnav a{font-size:10px;padding:8px 6px}.simWrap,.simDone{padding:18px 14px}.simIntro h1,.simDone h1{font-size:25px}.simScreen{padding:20px 10px;min-height:280px}.simDigits b{width:50px;height:60px;font-size:34px}.keypad button{min-height:62px}.sound{font-size:11px;padding:9px 7px}}
 
 .nullWarning{max-width:390px;margin:16px auto 0;padding:12px 14px;border:2px solid #d68132;border-radius:10px;background:#fff8ed;color:#70400f;text-align:left}.nullWarning strong{display:block;font-size:15px}.nullWarning p{margin:5px 0 0;font-size:13px;line-height:1.4;color:#70400f}
+
+.legendWarning{max-width:390px;margin:16px auto 0;padding:12px 14px;border:2px solid #198754;border-radius:10px;background:#eefaf3;color:#155d3a;text-align:left}.legendWarning strong{display:block;font-size:15px}.legendWarning p{margin:5px 0 0;font-size:13px;line-height:1.4;color:#155d3a}
