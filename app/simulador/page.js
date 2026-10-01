@@ -22,7 +22,7 @@ export default function Simulator(){
  const [uf,setUf]=useState(null);
  const [step,setStep]=useState(0),[number,setNumber]=useState(''),[candidate,setCandidate]=useState(null),[party,setParty]=useState(null),[status,setStatus]=useState('idle'),[votes,setVotes]=useState({}),[sound,setSound]=useState(true),[done,setDone]=useState(false);
  useEffect(()=>{const q=new URLSearchParams(window.location.search);const v=(q.get('uf')||'').toUpperCase();if(isValidUf(v))setUf(v)},[]);
- const offices=baseOffices.map(o=>({...o,uf:o.office==='PRESIDENTE'?'BR':uf}));
+ const offices=baseOffices.map(o=>o.id==='depEstadual'&&uf==='DF'?{...o,label:'Deputada ou Deputado Distrital',office:'DEPUTADO DISTRITAL',uf}:{...o,uf:o.office==='PRESIDENTE'?'BR':uf});
  const c=offices[step];
  const stateName=getStateName(uf);
  const proportional=c?.office==='DEPUTADO FEDERAL'||c?.office==='DEPUTADO ESTADUAL';
