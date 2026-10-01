@@ -46,7 +46,7 @@ export default function Simulator(){
   return()=>{live=false;clearTimeout(t)};
  },[number,step,done,uf]);
 
- function chooseState(code){setUf(code);setStep(0);setNumber('');setVotes({});setDone(false);history.replaceState(null,'','/simulador?uf='+code)}
+ function chooseState(code){setUf(code);setStep(0);setNumber('');setVotes({});setDone(false);history.replaceState(null,'','/simulador?uf='+code);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}
  function press(n){if(done||number.length>=c.digits)return;if(sound)tone('key');setNumber(v=>v+n)}
  function correct(){if(sound)tone('correct');setNumber('');setCandidate(null);setParty(null);setStatus('idle')}
  function confirm(blank=false){if(!blank&&!canConfirm)return;if(sound)tone('confirm');const vote=blank?{kind:'blank'}:legendVote?{kind:'legend',candidate_number:number,party_abbreviation:party.party_abbreviation,party_number:party.party_number}:duplicateSenator||nullVote?{kind:'null',candidate_number:number,reason:duplicateSenator?'duplicate-senator':'unknown-number'}:{kind:'candidate',...candidate};const next={...votes,[c.id]:vote};setVotes(next);setNumber('');setCandidate(null);setParty(null);if(step===offices.length-1){playFinal();setDone(true)}else setStep(s=>s+1)}
