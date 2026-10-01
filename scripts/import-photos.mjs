@@ -26,8 +26,13 @@ if(!entries.length) throw new Error("Nenhuma imagem encontrada no ZIP.");
 
 async function retry(fn,label,attempts=5){let last;for(let i=1;i<=attempts;i++){try{return await fn()}catch(e){last=e;console.warn(`${label}: tentativa ${i}/${attempts} falhou: ${e?.message||e}`);if(i<attempts)await new Promise(r=>setTimeout(r,Math.min(15000,750*2**(i-1))))}}throw last}
 let matched=0,uploaded=0,missing=0;
-const {data:rows,error:listErr}=await retry(async()=>{const r=await supabase.from("candidates").select("tse_candidate_id").eq("election_year",2026).eq("uf",uf);if(r.error)throw r.error;return r},"lista de candidatos da UF");
-const candidateIds=new Set((rows||[]).map(r=>String(r.tse_candidate_id)));
+const rows=[];
+for(let from=0;;from+=1000){
+  const page=await retry(async()=>{const r=await supabase.from("candidates").select("tse_candidate_id").eq("election_year",2026).eq("uf",uf).range(from,from+999);if(r.error)throw r.error;return r.data||[]},"lista de candidatos da UF");
+  rows.push(...page);
+  if(page.length<1000)break;
+}
+const candidateIds=new Set(rows.map(r=>String(r.tse_candidate_id)));
 console.log(`Candidatos carregados para ${uf}: ${candidateIds.size}`);
 
 const tasks=[];
