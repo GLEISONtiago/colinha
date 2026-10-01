@@ -16,7 +16,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !serviceKey) throw new Error("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY somente no ambiente local.");
 const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
 
-const wanted = new Set(["DEPUTADO FEDERAL","DEPUTADO ESTADUAL","SENADOR","GOVERNADOR","PRESIDENTE"]);
+const wanted = new Set(["DEPUTADO FEDERAL","DEPUTADO ESTADUAL","DEPUTADO DISTRITAL","SENADOR","GOVERNADOR","PRESIDENTE"]);
 const zip = new AdmZip(candidatesZip);
 const entries = zip.getEntries().filter(e => /consulta_cand_2026_(?:[A-Z]{2}|BRASIL)\.csv$/i.test(e.entryName) && !/BRASIL\.csv$/i.test(e.entryName));
 if (!entries.length) throw new Error("Nenhum CSV por UF encontrado no ZIP.");
