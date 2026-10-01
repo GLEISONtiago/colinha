@@ -68,7 +68,7 @@ export default function Home(){
  const [copied,setCopied]=useState(false);
  const [installPrompt,setInstallPrompt]=useState(null);
  const stateName=getStateName(uf);
- const cargos=baseCargos.map(c=>({...c,uf:c.office==='PRESIDENTE'?'BR':uf}));
+ const cargos=baseCargos.map(c=>c.id==='depEstadual'&&uf==='DF'?{...c,label:'DEPUTADA OU DEPUTADO DISTRITAL',office:'DEPUTADO DISTRITAL',uf}:{...c,uf:c.office==='PRESIDENTE'?'BR':uf});
 
  useEffect(()=>{
   const q=new URLSearchParams(window.location.search);
