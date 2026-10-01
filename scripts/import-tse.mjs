@@ -18,8 +18,8 @@ const supabase = createClient(url, serviceKey, { auth: { persistSession: false }
 
 const wanted = new Set(["DEPUTADO FEDERAL","DEPUTADO ESTADUAL","SENADOR","GOVERNADOR","PRESIDENTE"]);
 const zip = new AdmZip(candidatesZip);
-const entries = zip.getEntries().filter(e => /consulta_cand_2026_(PB|BR)\.csv$/i.test(e.entryName));
-if (!entries.length) throw new Error("CSV PB/BR não encontrado no ZIP.");
+const entries = zip.getEntries().filter(e => /consulta_cand_2026_(?:[A-Z]{2}|BRASIL)\.csv$/i.test(e.entryName) && !/BRASIL\.csv$/i.test(e.entryName));
+if (!entries.length) throw new Error("Nenhum CSV por UF encontrado no ZIP.");
 
 const rows = [];
 for (const entry of entries) {
@@ -28,7 +28,7 @@ for (const entry of entries) {
   for (const r of data) {
     const office = r.DS_CARGO;
     if (!wanted.has(office)) continue;
-    if (office === "PRESIDENTE" ? r.SG_UF !== "BR" : r.SG_UF !== "PB") continue;
+    if (office === "PRESIDENTE" ? r.SG_UF !== "BR" : r.SG_UF === "BR") continue;
     rows.push({
       election_year: Number(r.ANO_ELEICAO),
       uf: r.SG_UF,
@@ -45,7 +45,7 @@ for (const entry of entries) {
 }
 
 const byId = [...new Map(rows.map(r => [r.tse_candidate_id, r])).values()];
-console.log("Registros preparados:", byId.length);
+console.log("Registros nacionais preparados:", byId.length);
 for (let i=0;i<byId.length;i+=100) {
   const batch=byId.slice(i,i+100);
   const { error } = await supabase.from("candidates").upsert(batch,{onConflict:"election_year,tse_candidate_id"});
