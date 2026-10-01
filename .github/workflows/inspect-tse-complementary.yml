@@ -1,0 +1,19 @@
+name: Inspect TSE complementary data
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/inspect-tse-complementary.yml"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download complementary ZIP
+        run: curl --fail --location --retry 3 --output /tmp/complementar.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip
+      - name: Show files and CSV header
+        shell: bash
+        run: |
+          unzip -l /tmp/complementar.zip | head -40
+          unzip -p /tmp/complementar.zip consulta_cand_complementar_2026_BR.csv | head -2
