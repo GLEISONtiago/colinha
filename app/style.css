@@ -38,3 +38,9 @@
  .actions{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;grid-template-columns:1fr 82px}
  .actions button{font-size:14px}
 }
+
+.actions button:disabled{opacity:.45;cursor:not-allowed}
+.previewActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.previewActions .printBtn{background:#e4ecea;color:#0c5360}
+@media(max-width:420px){.previewActions{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
