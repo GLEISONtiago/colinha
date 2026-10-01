@@ -23,7 +23,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm ci
       - name: Download official TSE photo ZIP
         run: curl --fail --location --retry 3 --output /tmp/photos.zip "https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/foto_cand2026_${{ matrix.uf }}_div.zip"
