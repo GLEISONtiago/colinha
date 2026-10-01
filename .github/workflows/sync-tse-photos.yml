@@ -2,20 +2,39 @@ name: Sync TSE 2026 candidate photos
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "37 5 * * 0"
+    inputs:
+      uf:
+        description: "UF para sincronizar (ex.: PE, SP) ou ALL"
+        required: true
+        default: "ALL"
+        type: choice
+        options: [ALL, AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO, BR]
 
 concurrency:
-  group: tse-photos-2026
+  group: tse-photos-2026-${{ inputs.uf }}
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        shell: bash
+        run: |
+          if [ "${{ inputs.uf }}" = "ALL" ]; then
+            echo 'matrix=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO","BR"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix=["${{ inputs.uf }}"]' >> "$GITHUB_OUTPUT"
+          fi
   photos:
+    needs: prepare
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        uf: [AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO, BR]
+        uf: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -30,4 +49,5 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PHOTO_IMPORT_CONCURRENCY: "8"
         run: node scripts/import-photos.mjs --photos=/tmp/photos.zip --uf=${{ matrix.uf }}
