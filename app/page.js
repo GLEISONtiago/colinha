@@ -19,13 +19,27 @@ function Campo({c,value,onChange,onResolved}){const [s,setS]=useState({status:'i
  {item&&<div className="candidate">{item.photo_url?<img src={item.photo_url} alt=""/>:<div className="noPhoto">SEM FOTO</div>}<div><strong>{item.ballot_name}</strong><span>{item.party_abbreviation}</span><small>Nº {item.candidate_number}</small></div><b className="check">✓</b></div>}</div>}
 export default function Home(){const [vals,setVals]=useState({});const [resolved,setResolved]=useState({});const [preview,setPreview]=useState(null);
  function resolve(id,item){setResolved(s=>s[id]===item?s:{...s,[id]:item})}
- function makeCanvas(){const chosen=cargos.filter(c=>resolved[c.id]);if(!chosen.length){alert('Identifique pelo menos uma candidatura antes de gerar a cola.');return null}const cv=document.createElement('canvas');cv.width=1080;cv.height=1350;const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,1080,1350);x.fillStyle='#0c5360';x.fillRect(0,0,1080,220);x.fillStyle='#55b99c';x.fillRect(0,220,1080,18);x.textAlign='center';x.fillStyle='#fff';x.font='700 34px Arial';x.fillText('ELEIÇÕES 2026 • PARAÍBA',540,62);x.fillStyle='#ffd63d';x.font='800 70px Arial';x.fillText('LEVE A COLA!',540,150);let y=300;for(const c of chosen){const p=resolved[c.id];x.textAlign='left';x.fillStyle='#123f48';x.font='700 25px Arial';x.fillText(c.label,90,y);x.font='800 48px Arial';x.fillText(p.candidate_number,90,y+57);x.font='700 27px Arial';x.fillText(p.ballot_name,330,y+38);x.font='22px Arial';x.fillText(p.party_abbreviation,330,y+70);x.strokeStyle='#d9e5e2';x.beginPath();x.moveTo(90,y+100);x.lineTo(990,y+100);x.stroke();y+=145}x.fillStyle='#607477';x.font='22px Arial';x.fillText('Confira os números antes de votar.',90,1290);return cv}
- function gerar(){
+ function loadPhoto(url){return new Promise(resolve=>{if(!url)return resolve(null);const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url})}
+ async function makeCanvas(){const chosen=cargos.filter(c=>resolved[c.id]);if(!chosen.length){alert('Identifique pelo menos uma candidatura antes de gerar a cola.');return null}
+ const photos=await Promise.all(chosen.map(c=>loadPhoto(resolved[c.id].photo_url)));
+ const cv=document.createElement('canvas');cv.width=1080;cv.height=1350;const x=cv.getContext('2d');
+ x.fillStyle='#fff';x.fillRect(0,0,1080,1350);x.fillStyle='#0c5360';x.fillRect(0,0,1080,220);x.fillStyle='#55b99c';x.fillRect(0,220,1080,18);
+ x.textAlign='center';x.fillStyle='#fff';x.font='700 34px Arial';x.fillText('ELEIÇÕES 2026 • PARAÍBA',540,62);x.fillStyle='#ffd63d';x.font='800 70px Arial';x.fillText('LEVE A COLA!',540,150);
+ const top=270,bottom=1260,available=bottom-top;const rowH=Math.min(158,Math.floor(available/chosen.length));let y=top;
+ chosen.forEach((c,i)=>{const p=resolved[c.id],img=photos[i];const photoW=100,photoH=Math.min(122,rowH-30),px=90,py=y+24;
+   x.textAlign='left';x.fillStyle='#123f48';x.font='700 22px Arial';x.fillText(c.label,90,y+18);
+   if(img){const ir=img.width/img.height,rr=photoW/photoH;let sx=0,sy=0,sw=img.width,sh=img.height;if(ir>rr){sw=img.height*rr;sx=(img.width-sw)/2}else{sh=img.width/rr;sy=(img.height-sh)/2}x.save();x.beginPath();x.roundRect(px,py,photoW,photoH,8);x.clip();x.drawImage(img,sx,sy,sw,sh,px,py,photoW,photoH);x.restore()}
+   else{x.fillStyle='#eef3f2';x.fillRect(px,py,photoW,photoH);x.fillStyle='#607477';x.textAlign='center';x.font='700 15px Arial';x.fillText('SEM FOTO',px+photoW/2,py+photoH/2+5)}
+   x.textAlign='left';x.fillStyle='#123f48';x.font='800 43px Arial';x.fillText(p.candidate_number,215,y+68);x.font='700 27px Arial';x.fillText(p.ballot_name,380,y+62);x.font='22px Arial';x.fillText(p.party_abbreviation,380,y+94);
+   x.strokeStyle='#d9e5e2';x.beginPath();x.moveTo(90,y+rowH-5);x.lineTo(990,y+rowH-5);x.stroke();y+=rowH;
+ });
+ x.textAlign='left';x.fillStyle='#607477';x.font='22px Arial';x.fillText('Confira os números antes de votar.',90,1300);return cv}
+ async function gerar(){
   if(resolved.senador1&&resolved.senador2&&resolved.senador1.tse_candidate_id===resolved.senador2.tse_candidate_id){
     alert('Escolha candidaturas diferentes para a 1ª e a 2ª vaga de Senador.');
     return;
   }
-  const cv=makeCanvas();if(cv)setPreview(cv.toDataURL('image/png'))
+  const cv=await makeCanvas();if(cv)setPreview(cv.toDataURL('image/png'))
 }function baixar(){if(!preview)return;const a=document.createElement('a');a.download='minha-cola-eleitoral-2026.png';a.href=preview;a.click()}
  return <main><header><div className="eyebrow">ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header><section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>setVals(s=>({...s,[c.id]:v}))} onResolved={resolve}/>)}
  <div className="actions"><button onClick={gerar}>GERAR MINHA COLA</button><button className="secondary" onClick={()=>{setVals({});setResolved({});setPreview(null)}}>LIMPAR</button></div><p className="nota">Somente candidaturas identificadas são incluídas. Suas escolhas não são gravadas pelo site.</p></section>
