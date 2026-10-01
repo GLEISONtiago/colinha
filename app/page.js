@@ -172,14 +172,15 @@ export default function Home(){
  }
  function baixar(){if(!preview)return;const a=document.createElement('a');a.download=`minha-cola-eleitoral-2026-${uf.toLowerCase()}.png`;a.href=preview;a.click()}
  function imprimir(){if(!preview)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>Minha cola eleitoral</title><style>body{margin:0;text-align:center}img{max-width:100%;height:auto}@media print{img{width:100%}}</style></head><body><img src="${preview}" onload="window.print();window.close()"></body></html>`);w.document.close()}
- function resetState(){setUf(null);setVals({});setResolved({});setPreview(null);history.replaceState(null,'',window.location.pathname)}
+ function chooseState(code){setUf(code);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}
+ function resetState(){setUf(null);setVals({});setResolved({});setPreview(null);history.replaceState(null,'',window.location.pathname);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}
 
  if(!uf)return <main>
   <nav className="topnav"><b>COLINHA 2026</b><div><Link className="active" href="/">MONTAR COLA</Link><Link href="/simulador">SIMULADOR</Link></div></nav>
   <section className="statePicker">
    <div className="simBadge">ELEIÇÕES 2026</div><h1>Escolha seu estado</h1>
    <p>Selecione a UF para consultar as candidaturas do seu estado. Presidente é uma consulta nacional.</p>
-   <div className="stateGrid">{states.map(([code,name])=><button key={code} onClick={()=>setUf(code)}><img src={flagUrl(code)} alt={`Bandeira de ${name}`} loading="lazy"/><span className="stateText"><strong>{name}</strong><small>{code}</small></span><b>›</b></button>)}</div>
+   <div className="stateGrid">{states.map(([code,name])=><button key={code} onClick={()=>chooseState(code)}><img src={flagUrl(code)} alt={`Bandeira de ${name}`} loading="lazy"/><span className="stateText"><strong>{name}</strong><small>{code}</small></span><b>›</b></button>)}</div>
    <div className="privacyCard"><strong>Sem cadastro e sem banco de escolhas</strong><p>O aplicativo consulta a candidatura pelo número informado, mas não cria um registro da sua cola. Links compartilhados carregam os números no próprio link.</p></div>
    {installPrompt&&<button className="installBtn" onClick={installApp}>INSTALAR COLINHA NO DISPOSITIVO</button>}
   </section><Footer/>
