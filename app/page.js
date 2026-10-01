@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-const URL='https://lyagstynyfupldvbzgpb.supabase.co';
-const KEY='sb_publishable_g3yKs7jTypCIgmXmaJAeUg_PGSkZAhy';
+const URL=process.env.NEXT_PUBLIC_SUPABASE_URL||'https://lyagstynyfupldvbzgpb.supabase.co';
+const KEY=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||'sb_publishable_g3yKs7jTypCIgmXmaJAeUg_PGSkZAhy';
 const cargos=[
 {id:'depFederal',label:'DEPUTADA OU DEPUTADO FEDERAL',office:'DEPUTADO FEDERAL',digits:4,uf:'PB'},
 {id:'depEstadual',label:'DEPUTADA OU DEPUTADO ESTADUAL',office:'DEPUTADO ESTADUAL',digits:5,uf:'PB'},
@@ -9,15 +9,19 @@ const cargos=[
 {id:'senador2',label:'SENADORA OU SENADOR — 2ª VAGA',office:'SENADOR',digits:3,uf:'PB'},
 {id:'governador',label:'GOVERNADORA OU GOVERNADOR',office:'GOVERNADOR',digits:2,uf:'PB'},
 {id:'presidente',label:'PRESIDENTA OU PRESIDENTE',office:'PRESIDENTE',digits:2,uf:'BR'}];
-async function buscar(c,n){const q=new URLSearchParams({select:'ballot_name,party_abbreviation,candidate_number,photo_url,tse_candidate_id',election_year:'eq.2026',uf:`eq.${c.uf}`,office:`eq.${c.office}`,candidate_number:`eq.${n}`});const r=await fetch(`${URL}/rest/v1/candidates?${q}`,{headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});if(!r.ok)throw Error();return r.json()}
-function Campo({c,value,onChange,onResolved}){const [s,setS]=useState({status:'idle',items:[]});const refs=useRef([]);
+async function buscar(c,n){const q=new URLSearchParams({select:'ballot_name,party_abbreviation,candidate_number,photo_url,tse_candidate_id,source_generated_at',election_year:'eq.2026',uf:`eq.${c.uf}`,office:`eq.${c.office}`,candidate_number:`eq.${n}`});const r=await fetch(`${URL}/rest/v1/candidates?${q}`,{headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});if(!r.ok)throw Error();return r.json()}
+function Campo({c,value,onChange,onResolved,duplicate}){const [s,setS]=useState({status:'idle',items:[]});const refs=useRef([]);
  useEffect(()=>{let live=true;if(value.length!==c.digits){setS({status:'idle',items:[]});onResolved(c.id,null);return}setS({status:'loading',items:[]});const t=setTimeout(()=>buscar(c,value).then(items=>{if(!live)return;setS({status:items.length?'ok':'none',items});onResolved(c.id,items.length===1?items[0]:null)}).catch(()=>live&&setS({status:'error',items:[]})),180);return()=>{live=false;clearTimeout(t)}},[value]);
- function digit(i,v){const d=v.replace(/\D/g,'').slice(-1);const a=value.padEnd(c.digits,' ').split('');a[i]=d||' ';const nv=a.join('').trimEnd().replace(/ /g,'');onChange(nv);if(d&&i<c.digits-1)refs.current[i+1]?.focus()}
+ function digit(i,v){const d=v.replace(/\D/g,'').slice(-1);const a=Array.from({length:c.digits},(_,j)=>value[j]||'');a[i]=d;onChange(a.join(''));if(d&&i<c.digits-1)refs.current[i+1]?.focus()}
+ function paste(e){const d=e.clipboardData.getData('text').replace(/\D/g,'').slice(0,c.digits);if(!d)return;e.preventDefault();onChange(d);refs.current[Math.min(d.length,c.digits)-1]?.focus()}
  const item=s.items.length===1?s.items[0]:null;
- return <div className="cargo"><label>{c.label}</label><div className="digits">{Array.from({length:c.digits},(_,i)=><input key={i} ref={e=>refs.current[i]=e} aria-label={`${c.label}, dígito ${i+1}`} inputMode="numeric" maxLength="1" value={value[i]||''} onChange={e=>digit(i,e.target.value)} onKeyDown={e=>{if(e.key==='Backspace'&&!value[i]&&i>0)refs.current[i-1]?.focus()}}/>)}</div>
- {s.status==='loading'&&<p className="status">Consultando…</p>}{s.status==='none'&&<p className="status erro">Candidatura não encontrada. Confira o número.</p>}{s.status==='error'&&<p className="status erro">Não foi possível consultar agora.</p>}{s.items.length>1&&<p className="status aviso">Há mais de um registro para este número na base atual. Confira antes de continuar.</p>}
+ return <div className="cargo"><label>{c.label}</label><div className="digits">{Array.from({length:c.digits},(_,i)=><input key={i} ref={e=>refs.current[i]=e} aria-label={`${c.label}, dígito ${i+1}`} inputMode="numeric" maxLength="1" value={value[i]||''} onChange={e=>digit(i,e.target.value)} onPaste={paste} onKeyDown={e=>{if(e.key==='Backspace'&&!value[i]&&i>0){e.preventDefault();const nv=value.slice(0,i-1)+value.slice(i);onChange(nv);refs.current[i-1]?.focus()}}}/>)}</div>
+ {duplicate&&<p className="status erro">Repita não: escolha uma candidatura diferente para a outra vaga de Senador.</p>}{s.status==='loading'&&<p className="status">Consultando…</p>}{s.status==='none'&&<p className="status erro">Candidatura não encontrada. Confira o número.</p>}{s.status==='error'&&<p className="status erro">Não foi possível consultar agora.</p>}{s.items.length>1&&<p className="status aviso">Há mais de um registro para este número na base atual. Confira antes de continuar.</p>}
  {item&&<div className="candidate">{item.photo_url?<img src={item.photo_url} alt=""/>:<div className="noPhoto">SEM FOTO</div>}<div><strong>{item.ballot_name}</strong><span>{item.party_abbreviation}</span><small>Nº {item.candidate_number}</small></div><b className="check">✓</b></div>}</div>}
 export default function Home(){const [vals,setVals]=useState({});const [resolved,setResolved]=useState({});const [preview,setPreview]=useState(null);
+ const duplicateSenator=!!(resolved.senador1&&resolved.senador2&&resolved.senador1.tse_candidate_id===resolved.senador2.tse_candidate_id);
+ const validCount=cargos.filter(c=>resolved[c.id]).length;
+ const updatedAt=Object.values(resolved).filter(Boolean).map(v=>v.source_generated_at).filter(Boolean).sort().at(-1);
  function resolve(id,item){setResolved(s=>s[id]===item?s:{...s,[id]:item})}
  function loadPhoto(url){return new Promise(resolve=>{if(!url)return resolve(null);const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url})}
  async function makeCanvas(){const chosen=cargos.filter(c=>resolved[c.id]);if(!chosen.length){alert('Identifique pelo menos uma candidatura antes de gerar a cola.');return null}
@@ -41,6 +45,7 @@ export default function Home(){const [vals,setVals]=useState({});const [resolved
   }
   const cv=await makeCanvas();if(cv)setPreview(cv.toDataURL('image/png'))
 }function baixar(){if(!preview)return;const a=document.createElement('a');a.download='minha-cola-eleitoral-2026.png';a.href=preview;a.click()}
- return <main><header><div className="eyebrow">ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header><section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>setVals(s=>({...s,[c.id]:v}))} onResolved={resolve}/>)}
- <div className="actions"><button onClick={gerar}>GERAR MINHA COLA</button><button className="secondary" onClick={()=>{setVals({});setResolved({});setPreview(null)}}>LIMPAR</button></div><p className="nota">Somente candidaturas identificadas são incluídas. Suas escolhas não são gravadas pelo site.</p></section>
- {preview&&<div className="modal" onClick={()=>setPreview(null)}><div className="preview" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPreview(null)}>×</button><h2>Prévia da sua cola</h2><img src={preview} alt="Prévia da cola eleitoral"/><button onClick={baixar}>BAIXAR IMAGEM</button></div></div>}</main>}
+ function imprimir(){if(!preview)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>Minha cola eleitoral</title><style>body{margin:0;text-align:center}img{max-width:100%;height:auto}@media print{img{width:100%}}</style></head><body><img src="${preview}" onload="window.print();window.close()"></body></html>`);w.document.close()}
+ return <main><header><div className="eyebrow">ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header><section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>setVals(s=>({...s,[c.id]:v}))} onResolved={resolve} duplicate={(c.id==='senador1'||c.id==='senador2')&&duplicateSenator}/>)} 
+ <div className="actions"><button onClick={gerar} disabled={!validCount||duplicateSenator}>GERAR MINHA COLA</button><button className="secondary" onClick={()=>{setVals({});setResolved({});setPreview(null)}}>LIMPAR</button></div><p className="nota">Somente candidaturas identificadas são incluídas. Suas escolhas não são gravadas pelo site.{updatedAt&&<> Dados consultados da base importada em {new Date(updatedAt).toLocaleDateString('pt-BR')}.</>}</p></section>
+ {preview&&<div className="modal" onClick={()=>setPreview(null)}><div className="preview" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPreview(null)}>×</button><h2>Prévia da sua cola</h2><img src={preview} alt="Prévia da cola eleitoral"/><div className="previewActions"><button onClick={baixar}>BAIXAR IMAGEM</button><button className="printBtn" onClick={imprimir}>IMPRIMIR</button></div></div></div>}</main>}
