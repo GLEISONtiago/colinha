@@ -24,24 +24,22 @@ const zip=new AdmZip(photosZip);
 const entries=zip.getEntries().filter(e=>!e.isDirectory && /\.(jpe?g|png|webp)$/i.test(e.entryName));
 if(!entries.length) throw new Error("Nenhuma imagem encontrada no ZIP.");
 
+async function retry(fn,label,attempts=5){let last;for(let i=1;i<=attempts;i++){try{return await fn()}catch(e){last=e;console.warn(`${label}: tentativa ${i}/${attempts} falhou: ${e?.message||e}`);if(i<attempts)await new Promise(r=>setTimeout(r,Math.min(15000,750*2**(i-1))))}}throw last}
 let matched=0,uploaded=0,missing=0;
 for(const [index,e] of entries.entries()){
   const base=path.basename(e.entryName);
   const m=base.match(/(\d{10,})/);
   if(!m){missing++;continue}
   const tseId=m[1];
-  const {data:candidates,error:qerr}=await supabase.from("candidates").select("id,tse_candidate_id").eq("election_year",2026).eq("tse_candidate_id",tseId);
-  if(qerr) throw qerr;
+  const {data:candidates,error:qerr}=await retry(async()=>{const r=await supabase.from("candidates").select("id,tse_candidate_id").eq("election_year",2026).eq("tse_candidate_id",tseId);if(r.error)throw r.error;return r},`consulta ${tseId}`);
   if(!candidates?.length){missing++;continue}
   matched++;
   const ext=(base.split(".").pop()||"jpg").toLowerCase().replace("jpeg","jpg");
   const objectPath=`2026/${uf}/${tseId}.${ext}`;
   const contentType=ext==="png"?"image/png":ext==="webp"?"image/webp":"image/jpeg";
-  const {error:upErr}=await supabase.storage.from(bucket).upload(objectPath,e.getData(),{contentType,upsert:true,cacheControl:"86400"});
-  if(upErr) throw upErr;
+  await retry(async()=>{const {error}=await supabase.storage.from(bucket).upload(objectPath,e.getData(),{contentType,upsert:true,cacheControl:"86400"});if(error)throw error},`upload ${tseId}`);
   const {data:pub}=supabase.storage.from(bucket).getPublicUrl(objectPath);
-  const {error:uerr}=await supabase.from("candidates").update({photo_url:pub.publicUrl}).eq("election_year",2026).eq("tse_candidate_id",tseId);
-  if(uerr) throw uerr;
+  await retry(async()=>{const {error}=await supabase.from("candidates").update({photo_url:pub.publicUrl}).eq("election_year",2026).eq("tse_candidate_id",tseId);if(error)throw error},`update ${tseId}`);
   uploaded++;
   if((index+1)%50===0) console.log(`Processadas ${index+1}/${entries.length} | vinculadas ${uploaded}`);
 }
