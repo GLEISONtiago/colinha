@@ -1,0 +1,29 @@
+name: Sync TSE 2026 candidates
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 9,21 * * *"
+
+concurrency:
+  group: tse-candidates-2026
+  cancel-in-progress: false
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download official TSE candidates ZIP
+        run: curl --fail --location --retry 3 --output /tmp/consulta_cand_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip
+      - name: Import national candidates
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/import-tse.mjs --candidates=/tmp/consulta_cand_2026.zip
