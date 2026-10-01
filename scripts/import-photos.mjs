@@ -10,6 +10,8 @@ function arg(name) {
   return i>=0 ? process.argv[i+1] : undefined;
 }
 const photosZip=arg("photos")||process.env.TSE_PHOTOS_ZIP;
+const uf=(arg("uf")||process.env.TSE_PHOTOS_UF||"PB").toUpperCase();
+if(!/^(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO|BR)$/.test(uf)) throw new Error("UF inválida.");
 if(!photosZip) throw new Error("Informe --photos=\"C:\\caminho\\foto_cand2026_PB_div.zip\"");
 if(!fs.existsSync(photosZip)) throw new Error(`Arquivo não encontrado: ${photosZip}`);
 
@@ -33,7 +35,7 @@ for(const [index,e] of entries.entries()){
   if(!candidates?.length){missing++;continue}
   matched++;
   const ext=(base.split(".").pop()||"jpg").toLowerCase().replace("jpeg","jpg");
-  const objectPath=`2026/PB/${tseId}.${ext}`;
+  const objectPath=`2026/${uf}/${tseId}.${ext}`;
   const contentType=ext==="png"?"image/png":ext==="webp"?"image/webp":"image/jpeg";
   const {error:upErr}=await supabase.storage.from(bucket).upload(objectPath,e.getData(),{contentType,upsert:true,cacheControl:"86400"});
   if(upErr) throw upErr;
@@ -47,4 +49,4 @@ console.log(`Fotos no ZIP: ${entries.length}`);
 console.log(`Correspondências no banco: ${matched}`);
 console.log(`Fotos enviadas/vinculadas: ${uploaded}`);
 console.log(`Sem correspondência: ${missing}`);
-console.log("Importação de fotos concluída.");
+console.log(`Importação de fotos ${uf} concluída.`);
