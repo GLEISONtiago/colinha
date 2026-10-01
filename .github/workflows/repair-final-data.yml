@@ -1,0 +1,48 @@
+name: Repair final 2026 national data
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/repair-final-data.yml"
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Download official TSE candidates ZIP
+        run: curl --fail --location --retry 3 --output /tmp/consulta_cand_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip
+      - name: Import national candidates including DF district deputies
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/import-tse.mjs --candidates=/tmp/consulta_cand_2026.zip
+
+  photos:
+    needs: candidates
+    strategy:
+      fail-fast: false
+      matrix:
+        uf: [DF, MG, SP]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Download official TSE photo ZIP
+        run: curl --fail --location --retry 3 --output /tmp/photos.zip "https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/foto_cand2026_${{ matrix.uf }}_div.zip"
+      - name: Import photos with paginated candidate lookup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PHOTO_IMPORT_CONCURRENCY: "8"
+        run: node scripts/import-photos.mjs --photos=/tmp/photos.zip --uf=${{ matrix.uf }}
