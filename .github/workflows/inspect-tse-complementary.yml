@@ -17,4 +17,4 @@ jobs:
         run: |
           unzip -p /tmp/complementar.zip consulta_cand_complementar_2026_BR.csv > /tmp/br.csv
           head -1 /tmp/br.csv
-          grep -E '280002553884|280002554479' /tmp/br.csv || true
+          grep -a -E '280002553884|280002554479' /tmp/br.csv || true
