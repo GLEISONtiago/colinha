@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - name: Download official TSE photo ZIP
         run: curl --fail --location --retry 3 --output /tmp/photos.zip "https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/foto_cand2026_${{ matrix.uf }}_div.zip"
       - name: Import photos
