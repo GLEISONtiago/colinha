@@ -1,0 +1,34 @@
+name: Sync TSE 2026 candidate photos
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 5 * * 0"
+
+concurrency:
+  group: tse-photos-2026
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        uf: [AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO, BR]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download official TSE photo ZIP
+        run: curl --fail --location --retry 3 --output /tmp/photos.zip "https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/foto_cand2026_${{ matrix.uf }}_div.zip"
+      - name: Import photos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/import-photos.mjs --photos=/tmp/photos.zip --uf=${{ matrix.uf }}
