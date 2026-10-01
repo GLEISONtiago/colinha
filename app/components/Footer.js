@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function Footer(){return <footer className="siteFooter"><div><Link href="/sobre">Sobre</Link><Link href="/dados">Dados e fontes</Link><Link href="/privacidade">Privacidade</Link></div><small>Colinha 2026 • ferramenta independente e educativa</small></footer>}
