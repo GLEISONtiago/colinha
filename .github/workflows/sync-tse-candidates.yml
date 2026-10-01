@@ -2,6 +2,11 @@ name: Sync TSE 2026 candidates
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/import-tse.mjs"
+      - ".github/workflows/sync-tse-candidates.yml"
   schedule:
     - cron: "17 1,7,13,19 * * *"
 
