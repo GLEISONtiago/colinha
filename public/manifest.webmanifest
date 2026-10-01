@@ -1,0 +1,10 @@
+{
+  "name": "Colinha 2026 — Paraíba",
+  "short_name": "Colinha 2026",
+  "description": "Ferramenta neutra para gerar sua cola eleitoral.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0c5360",
+  "lang": "pt-BR"
+}
