@@ -3,7 +3,7 @@ name: Sync TSE 2026 candidates
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 9,21 * * *"
+    - cron: "17 1,7,13,19 * * *"
 
 concurrency:
   group: tse-candidates-2026
@@ -19,10 +19,12 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Download official TSE candidates ZIP
-        run: curl --fail --location --retry 3 --output /tmp/consulta_cand_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip
-      - name: Import national candidates
+      - name: Download official TSE candidate datasets
+        run: |
+          curl --fail --location --retry 3 --output /tmp/consulta_cand_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip
+          curl --fail --location --retry 3 --output /tmp/consulta_cand_complementar_2026.zip https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip
+      - name: Import national candidates and current ballot status
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/import-tse.mjs --candidates=/tmp/consulta_cand_2026.zip
+        run: node scripts/import-tse.mjs --candidates=/tmp/consulta_cand_2026.zip --complementary=/tmp/consulta_cand_complementar_2026.zip
