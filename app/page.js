@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import Link from 'next/link';
 const URL=process.env.NEXT_PUBLIC_SUPABASE_URL||'https://lyagstynyfupldvbzgpb.supabase.co';
 const KEY=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||'sb_publishable_g3yKs7jTypCIgmXmaJAeUg_PGSkZAhy';
 const cargos=[
@@ -46,6 +47,6 @@ export default function Home(){const [vals,setVals]=useState({});const [resolved
   const cv=await makeCanvas();if(cv)setPreview(cv.toDataURL('image/png'))
 }function baixar(){if(!preview)return;const a=document.createElement('a');a.download='minha-cola-eleitoral-2026.png';a.href=preview;a.click()}
  function imprimir(){if(!preview)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>Minha cola eleitoral</title><style>body{margin:0;text-align:center}img{max-width:100%;height:auto}@media print{img{width:100%}}</style></head><body><img src="${preview}" onload="window.print();window.close()"></body></html>`);w.document.close()}
- return <main><header><div className="eyebrow">ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header><section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>setVals(s=>({...s,[c.id]:v}))} onResolved={resolve} duplicate={(c.id==='senador1'||c.id==='senador2')&&duplicateSenator}/>)} 
+ return <main><nav className="topnav" aria-label="Navegação principal"><b>COLINHA 2026</b><div><Link className="active" href="/">MONTAR COLA</Link><Link href="/simulador">SIMULADOR</Link></div></nav><header><div className="eyebrow">ELEIÇÕES 2026 • PARAÍBA</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header><section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>setVals(s=>({...s,[c.id]:v}))} onResolved={resolve} duplicate={(c.id==='senador1'||c.id==='senador2')&&duplicateSenator}/>)} 
  <div className="actions"><button onClick={gerar} disabled={!validCount||duplicateSenator}>GERAR MINHA COLA</button><button className="secondary" onClick={()=>{setVals({});setResolved({});setPreview(null)}}>LIMPAR</button></div><p className="nota">Somente candidaturas identificadas são incluídas. Suas escolhas não são gravadas pelo site.{updatedAt&&<> Dados consultados da base importada em {new Date(updatedAt).toLocaleDateString('pt-BR')}.</>}</p></section>
  {preview&&<div className="modal" onClick={()=>setPreview(null)}><div className="preview" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setPreview(null)}>×</button><h2>Prévia da sua cola</h2><img src={preview} alt="Prévia da cola eleitoral"/><div className="previewActions"><button onClick={baixar}>BAIXAR IMAGEM</button><button className="printBtn" onClick={imprimir}>IMPRIMIR</button></div></div></div>}</main>}
