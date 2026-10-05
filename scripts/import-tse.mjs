@@ -40,7 +40,8 @@ for (const entry of entries) {
       party_abbreviation: r.SG_PARTIDO,
       party_number: Number(r.NR_PARTIDO) || null,
       tse_candidate_id: String(r.SQ_CANDIDATO),
-      registration_status: r.DS_SITUACAO_CANDIDATURA || null
+      registration_status: r.DS_SITUACAO_CANDIDATURA || null,
+      source_generated_at: generatedAt(r.DT_GERACAO,r.HH_GERACAO)
     });
   }
 }
