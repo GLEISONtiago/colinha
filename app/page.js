@@ -3,9 +3,8 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import Footer from './components/Footer';
 import {states,getStateName,flagUrl,isValidUf} from './lib/states';
+import {fetchCandidates,isDemoConfigured,DEMO_NUMBERS} from './lib/candidateSource';
 
-const URL=process.env.NEXT_PUBLIC_SUPABASE_URL||'https://lyagstynyfupldvbzgpb.supabase.co';
-const KEY=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||'sb_publishable_g3yKs7jTypCIgmXmaJAeUg_PGSkZAhy';
 const baseCargos=[
 {id:'depFederal',label:'DEPUTADA OU DEPUTADO FEDERAL',office:'DEPUTADO FEDERAL',digits:4},
 {id:'depEstadual',label:'DEPUTADA OU DEPUTADO ESTADUAL',office:'DEPUTADO ESTADUAL',digits:5},
@@ -15,22 +14,16 @@ const baseCargos=[
 {id:'presidente',label:'PRESIDENTA OU PRESIDENTE',office:'PRESIDENTE',digits:2}
 ];
 
-async function buscar(c,n){
- const q=new URLSearchParams({select:'ballot_name,party_abbreviation,candidate_number,photo_url,tse_candidate_id,source_generated_at',election_year:'eq.2026',uf:`eq.${c.uf}`,office:`eq.${c.office}`,candidate_number:`eq.${n}`,inserted_in_urn:'eq.true',is_substituted:'eq.false'});
- const r=await fetch(`${URL}/rest/v1/candidates?${q}`,{headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});
- if(!r.ok)throw Error();
- return r.json();
-}
-
-function Campo({c,value,onChange,onResolved,duplicate}){
+function Campo({c,value,onChange,onResolved,onDataMode,duplicate}){
  const [s,setS]=useState({status:'idle',items:[]});
  const refs=useRef([]);
  useEffect(()=>{
   let live=true;
   if(!c.uf||value.length!==c.digits){setS({status:'idle',items:[]});onResolved(c.id,null);return}
   setS({status:'loading',items:[]});
-  const t=setTimeout(()=>buscar(c,value).then(items=>{
+  const t=setTimeout(()=>fetchCandidates(c,value).then(({items,demo})=>{
    if(!live)return;
+   onDataMode(demo?'demo':'live');
    setS({status:items.length?'ok':'none',items});
    onResolved(c.id,items.length===1?items[0]:null);
   }).catch(()=>live&&setS({status:'error',items:[]})),180);
@@ -67,6 +60,7 @@ export default function Home(){
  const [preview,setPreview]=useState(null);
  const [copied,setCopied]=useState(false);
  const [installPrompt,setInstallPrompt]=useState(null);
+ const [dataMode,setDataMode]=useState(isDemoConfigured()?'demo':'live');
  const stateName=getStateName(uf);
  const cargos=baseCargos.map(c=>c.id==='depEstadual'&&uf==='DF'?{...c,label:'DEPUTADA OU DEPUTADO DISTRITAL',office:'DEPUTADO DISTRITAL',uf}:{...c,uf:c.office==='PRESIDENTE'?'BR':uf});
 
@@ -181,6 +175,7 @@ export default function Home(){
    <div className="simBadge">ELEIÇÕES 2026</div><h1>Escolha seu estado</h1>
    <p>Selecione a UF para consultar as candidaturas do seu estado. Presidente é uma consulta nacional.</p>
    <div className="stateGrid">{states.map(([code,name])=><button key={code} onClick={()=>chooseState(code)}><img src={flagUrl(code)} alt={`Bandeira de ${name}`} loading="lazy"/><span className="stateText"><strong>{name}</strong><small>{code}</small></span><b>›</b></button>)}</div>
+   {isDemoConfigured()&&<div className="demoBanner demoIntro"><strong>PROTÓTIPO FUNCIONAL</strong><span>Este repositório funciona sem banco de dados em modo demonstração. Depois de escolher um estado, use: Federal 1234, Estadual/Distrital 12345, Senado 123 e 124, Governador 12 e Presidente 13.</span></div>}
    <div className="privacyCard"><strong>Sem cadastro e sem banco de escolhas</strong><p>O aplicativo consulta a candidatura pelo número informado, mas não cria um registro da sua cola. Links compartilhados carregam os números no próprio link.</p></div>
    {installPrompt&&<button className="installBtn" onClick={installApp}>INSTALAR COLINHA NO DISPOSITIVO</button>}
   </section><Footer/>
@@ -188,9 +183,9 @@ export default function Home(){
 
  return <main>
   <nav className="topnav" aria-label="Navegação principal"><b>COLINHA 2026</b><div><Link className="active" href={'/?uf='+uf}>MONTAR COLA</Link><Link href={'/simulador?uf='+uf}>SIMULADOR</Link></div></nav>
-  <header><div className="eyebrow">ELEIÇÕES 2026 • {stateName.toUpperCase()}</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header>
+  {dataMode==='demo'&&<div className="demoBanner"><strong>MODO DEMONSTRAÇÃO</strong><span>Use os números 1234, 12345, 123, 124, 12 e 13 para testar o protótipo sem Supabase.</span></div>}<header><div className="eyebrow">ELEIÇÕES 2026 • {stateName.toUpperCase()}</div><h1>NO DIA 04/10,<br/><b>LEVE A COLA!</b></h1><p>Digite os números que você já escolheu. A ferramenta apenas identifica as candidaturas.</p></header>
   <div className="stateBar"><span><img src={flagUrl(uf)} alt=""/> Estado selecionado: <strong>{stateName} ({uf})</strong></span><button onClick={resetState}>TROCAR ESTADO</button></div>
-  <section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>changeValue(c.id,v)} onResolved={resolve} duplicate={(c.id==='senador1'||c.id==='senador2')&&duplicateSenator}/>)}
+  <section>{cargos.map(c=><Campo key={c.id} c={c} value={vals[c.id]||''} onChange={v=>changeValue(c.id,v)} onResolved={resolve} onDataMode={setDataMode} duplicate={(c.id==='senador1'||c.id==='senador2')&&duplicateSenator}/>)}
    <div className="actions"><button onClick={gerar} disabled={!validCount||duplicateSenator}>GERAR MINHA COLA</button><button className="secondary" onClick={()=>{setVals({});setResolved({});setPreview(null);setCopied(false)}}>LIMPAR</button></div>
    <p className="nota">Somente candidaturas identificadas são incluídas. O aplicativo não cria um registro da sua cola no banco.{updatedAt&&<> Base consultada com atualização de {new Date(updatedAt).toLocaleDateString('pt-BR')}.</>}</p>
   </section><Footer/>
